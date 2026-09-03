@@ -9,7 +9,23 @@ localStorage.setItem('rinova-chat-visitor', state.visitorKey);
 function track(name, params = {}) { return window.rinovaAnalytics?.track ? window.rinovaAnalytics.track(name, params) : (window.dataLayer = window.dataLayer || [], window.dataLayer.push({ event: name, ...params })); }
 function toast(message) { const node = $('#toast'); node.textContent = message; node.classList.add('show'); setTimeout(() => node.classList.remove('show'), 2600); }
 function saveBag() { localStorage.setItem('rinova-bag', JSON.stringify(state.bag)); renderBag(); }
-async function api(path, options = {}) { const response = await fetch(`${API_BASE}${path}`, { ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || 'Could not load shop data'); return data; }
+
+async function api(path, options = {}) {
+  if (path === '/categories') return { categories: fallbackCategories };
+  if (path === '/products') return { products: fallbackProducts };
+  if (path === '/content/home') return { content: [], posts: [], banners: [] };
+  
+  if (path === '/chat/customer') {
+    return { reply: "এটি একটি ডেমো ভার্সন। আসল ব্যাকএন্ড কানেক্ট করা নেই, তাই প্রোডাক্ট অর্ডার করা যাবে না।", products: [] };
+  }
+  
+  if (path === '/newsletter') {
+    return { message: "Demo mode: Email address received!" };
+  }
+  
+  return {}; 
+}
+
 function renderCategories(categories) { $('#category-grid').innerHTML = categories.map((category) => `<a class="category-card" href="#shop" data-category="${escapeHtml(category.slug)}"><img src="${escapeHtml(category.imageUrl || '/assets/beauty-flatlay.jpg')}" alt="${escapeHtml(category.name)}" loading="lazy" /><span>${escapeHtml(category.name)} <b>${icon('arrowUpRight')}</b></span></a>`).join(''); document.querySelectorAll('.category-card').forEach((card) => card.addEventListener('click', () => { state.filter = card.dataset.category; document.querySelectorAll('.filter').forEach((filter) => filter.classList.toggle('active', filter.dataset.filter === state.filter)); renderProducts(); renderMarketingBanners(state.marketingBanners); track('category_select', { category: state.filter }); })); }
 function searchText(product) { return [product.name, product.description, product.shortDescription, product.categoryName, product.categorySlug, product.sku, product.barcode, product.tagsJson].map((value) => String(value || '').normalize('NFKC').toLocaleLowerCase()).join(' '); }
 function visibleProducts() { let products = state.filter === 'featured' ? state.products.filter((product) => product.featured || (Number(product.reviewCount || 0) > 0 && Number(product.rating || 0) >= 4.5)) : state.filter === 'all' ? state.products : state.products.filter((product) => product.categorySlug === state.filter); const terms = state.search.trim().normalize('NFKC').toLocaleLowerCase().split(/\s+/).filter(Boolean); if (terms.length) products = products.filter((product) => { const haystack = searchText(product); return terms.every((term) => haystack.includes(term)); }); const unique = new Map(); products.forEach((product) => { const key = String(product.id ?? product.slug ?? product.name).toLowerCase(); if (!unique.has(key)) unique.set(key, product); }); return Array.from(unique.values()); }
