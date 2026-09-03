@@ -30,7 +30,7 @@ jobs:
       - name: Upload static frontend
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./web
+          path: root
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
