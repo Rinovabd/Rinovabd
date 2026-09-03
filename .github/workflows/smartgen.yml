@@ -1,4 +1,4 @@
-name: Rinova BD GitHub Pages
+name: Frontend Only CI/CD
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: rinova-pages-${{ github.ref }}
+  group: rinovabd-frontend
   cancel-in-progress: true
 
 permissions:
@@ -16,24 +16,32 @@ permissions:
 
 jobs:
   deploy:
-    name: Publish static frontend to GitHub Pages
+    name: Deploy Static Frontend
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
-      
-      - name: Configure Pages
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run Path Fixer
+        run: python fix_paths.py
+
+      - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-      
-      - name: Upload static frontend
+
+      - name: Upload Static Frontend Files
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
-      
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
